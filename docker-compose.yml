@@ -1,0 +1,65 @@
+version: '3.4'
+
+services:
+  postgres_es:
+    image: postgres:latest
+    container_name: 'postgre_es'
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: WriteDb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: sa1234
+    ports:
+      - 5432:5432
+
+  pgadmin_es:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@aspnetrun.com
+      - PGADMIN_DEFAULT_PASSWORD=admin1234
+    restart: always
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data://root/.pgadmin
+
+  zookeeper_es:
+    image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper_es
+    container_name: zookeeper_es
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker_es:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: broker_es
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper_es
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper_es:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker_es:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      TOPIC_AUTO_CREATE: 1
+
+  mongodb_es:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=sample
+
+volumes:
+  db_volume:
+  pgadmin_data:
+  mongodb_data:
